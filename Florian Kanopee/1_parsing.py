@@ -29,7 +29,7 @@ def flatten_json(data: str, prefix: str = '') -> dict:
     elif isinstance(data, list):
         flattened = {}
         for i, item in enumerate(data):
-            if i > limit_list : continue
+            if i > limit_list: continue
             flattened.update(flatten_json(item, f"{prefix}.{i}"))
         return flattened
     else:

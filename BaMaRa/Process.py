@@ -18,10 +18,10 @@ columns = [["ID BaMaRa", "Non malade", "Nom de naissance", "Prénom", "Date de n
 # Colonnes du fichier de concaténation
 final_columns = ["ID", "Nom", "Prénom", "Date de naissance", "Première activité", "Dernière activité", "Statut", "Diagnostic", "Malade"]
 
-years_selection = range(2019, 2024)                   # Années d'intérêt
-stats_type = ["File Active", "Activité", "Nouveaux"]  # Type de catégories
+years_selection = range(2019, 2024)                                                         # Années d'intérêt
+stats_type = ["File Active", "Activité", "Nouveaux"]                                        # Type de catégories
 maladies = ["Narcolepsie de type 1", "Narcolepsie de type 2", "Narcolepsie sans cataplexie", "Hypersomnie idiopathique",
-            "Syndrome de Kleine-Levin", "Indéterminé/Non renseigné"]  # Maladies identifiées
+            "Syndrome de Kleine-Levin", "Indéterminé/Non renseigné"]                        # Maladies identifiées
 
 # Lignes du fichier de Stats
 stats_index = []
@@ -36,17 +36,17 @@ print(f"Ouverture du fichier : {file}")
 dataframes = pd.read_excel(file, sheet_name=sheets_name)                                # Ouverture en un dictionnaire de dataframes (1 par feuille de l'excel)
 for i in range(4): dataframes[i] = dataframes[i][columns[i]]                            # Sélection des colonnes
 dataframes[3].loc[dataframes[3]["Maladie rare (Orphanet)"] == "Narcolepsie-cataplexie", "Maladie rare (Orphanet)"] = "Narcolepsie de type 1"
-#dataframes[3].loc[dataframes[3]["Maladie rare (Orphanet)"] == "Narcolepsie sans cataplexie", "Maladie rare (Orphanet)"] = "Narcolepsie de type 2"
+# dataframes[3].loc[dataframes[3]["Maladie rare (Orphanet)"] == "Narcolepsie sans cataplexie", "Maladie rare (Orphanet)"] = "Narcolepsie de type 2"
 mask = ~dataframes[3]["Statut"].isna()                                                  # Ceux qui ont un statut
 dataframes[3].loc[mask, "Maladie rare (Orphanet)"] = dataframes[3].loc[mask, "Maladie rare (Orphanet)"].fillna("Indéterminé/Non renseigné")
 dataframes[3] = dataframes[3][dataframes[3]["Maladie rare (Orphanet)"].isin(maladies)]  # Selection des diagnostics
 
 ##################################################
 # Récupération et Concaténation des informations
-final_df = pd.DataFrame(columns=final_columns)  # Création du dataframe final
+final_df = pd.DataFrame(columns=final_columns)                                                # Création du dataframe final
 
 final_df[["ID", "Malade", "Nom", "Prénom", "Date de naissance"]] = dataframes[0][columns[0]]  # Récupération des infos administratives
-ids = final_df["ID"].unique().tolist()  # Récupération des ID
+ids = final_df["ID"].unique().tolist()                                                        # Récupération des ID
 for id_ in ids:
     # Prises en charge pour la derniere activité
     tmp = dataframes[1].loc[dataframes[1]["ID BaMaRa"] == id_, "Date de la dernière activité"].dropna().to_numpy()
@@ -89,12 +89,12 @@ stats_df = pd.DataFrame(0, columns=years_selection, index=stats_index)  # Créat
 for y in years_selection:
     for m in maladies + ["Non malade"]:
         filt_df = final_df.copy()
-        mask = filt_df["Statut"].isna()     # Non malades (sans diagnostic)
-        if m != "Non malade":               # Malades (avec diagnostic)
+        mask = filt_df["Statut"].isna()                # Non malades (sans diagnostic)
+        if m != "Non malade":                          # Malades (avec diagnostic)
             if m == "Indéterminé/Non renseigné": mask = ~mask & ((filt_df["Statut"] == "Indéterminé") | (filt_df["Diagnostic"] == m))
             else:                                mask = ~mask & ((filt_df["Statut"] != "Indéterminé") & (filt_df["Diagnostic"] == m))
-        filt_df = filt_df[mask]                         # Filtre sur Malade / non malade
-        tmp = filt_df[filt_df[f"Activités {y}"] != 0]   # Activité sur l'année
+        filt_df = filt_df[mask]                        # Filtre sur Malade / non malade
+        tmp = filt_df[filt_df[f"Activités {y}"] != 0]  # Activité sur l'année
         print(f"Année : {y}, maladie : {m}, filtre len : {len(tmp)}")
         if len(filt_df) == 0: continue
 
@@ -112,8 +112,7 @@ for s in stats_type:
     stats_df.loc[s, :] = np.nan
     for y in years_selection:
         Total_malade = 0
-        for m in maladies:
-            Total_malade += stats_df.loc[s + " - " + m, y]
+        for m in maladies: Total_malade += stats_df.loc[s + " - " + m, y]
         stats_df.loc[s + " - Malade", y] = Total_malade
         stats_df.loc[s + " - Total", y] = stats_df.loc[s + " - Malade", y] + stats_df.loc[s + " - Non malade", y]
 

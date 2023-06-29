@@ -1,15 +1,16 @@
 """ Combine les csv """
 
-import pandas as pd
 import glob
+
+import pandas as pd
 
 filename = "all_kanopee"
 
 # Utilisation de glob pour récupérer les fichiers
-file_pattern = filename+"_[0-9]*.csv"
+file_pattern = filename + "_[0-9]*.csv"
 file_list = glob.glob(file_pattern)
 
-dataframes= []
+dataframes = []
 for file in file_list:
     print(f"Ouverture du fichier : {file}")
     dataframes.append(pd.read_csv(file))
