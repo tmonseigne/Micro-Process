@@ -1,12 +1,10 @@
 """ Fonctions Utiles """
 
 import os
-import glob
-import numpy as np
-import pandas as pd
-import scipy
-import seaborn as sns
+
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 ##################################################
 def find_files(path: str, name: str = "") -> list[str]:
@@ -42,5 +40,3 @@ def get_histogramms(axes: list[plt.axes], dataframe: pd.DataFrame, electrods):
         axes[i].set_title(electrods[i])
         sns.histplot(part, bins=bins, ax=axes[i], kde=False)
         # Je veux un histogramme pour une barre à 11, 12,13,14,15,16
-
-

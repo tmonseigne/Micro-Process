@@ -19,10 +19,9 @@ for i = 1:length(subjects)
 	disp(['Sujet ', subject])
 	
 	subjectMat = [];
-	% 	
+
 	% Obtenez les fichiers associés au sujet actuel
 	subjectFiles = files.(subject);
-	% Initialiser une cellule pour stocker les tableaux des spindles avec des informations supplémentaires
 	
 	% Parcourir les fichiers associés au sujet actuel
 	for j = 1:length(subjectFiles)
@@ -60,6 +59,6 @@ for i = 1:length(subjects)
 	% Enregistrement de la Meta Matrice du sujet dans un fichier csv
 	% Le nom du fichier aura la forme : 'subject Spindles.csv'
 	outputFile = fullfile(spindlesFolderPath, [subject, ' Spindles.csv']);
-	writematrix(subjectMat, outputFile); % Vous devrez fournir la fonction cell2csv (voir ci-dessous)
+	writematrix(subjectMat, outputFile);
 end
 

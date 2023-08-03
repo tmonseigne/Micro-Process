@@ -37,12 +37,7 @@ for i = 1:length(folders)
 	for j = 1:length(fichiersMat)
 		nomFichier = fichiersMat(j).name;
 		cheminFichier = fullfile(folderPath, nomFichier);
-		
-		% Extraire le nom du sujet à partir du nom du fichier
-		% Supposons que le nom du fichier est de la forme "nom_du_sujet.electrode.A4R.mat"
-		% et que vous souhaitez extraire "nom_du_sujet"
-		nomDuSujet = strsplit(nomFichier, '.');
-		nomDuSujet = nomDuSujet{1};
+		nomDuSujet = Get_Subject(nomFichier);
 		
 		% Vérifier si le sujet existe déjà dans la structure
 		if isfield(res, nomDuSujet)
