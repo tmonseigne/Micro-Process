@@ -69,7 +69,7 @@ def compute_SRI(dataframe: pd.DataFrame, missing_behaviour: int = 0):
     n_min = 1440
     res = 0
     n_epochs = 0
-    for i in range(n_day-1):
+    for i in range(1, n_day):
         day_0 = dataframe[dataframe[cols[0]] == i]
         day_1 = dataframe[dataframe[cols[0]] == i + 1]
         for j in range(n_min):
@@ -127,10 +127,10 @@ def main(path: str):
     files = os.listdir(path)
     files = [file for file in files if file.endswith(".csv")]
     # Affiche la liste des fichiers CSV
-    print(f" {len(files)} Fichiers CSV dans le dossier:")
+    print(f"{len(files)} Fichiers CSV dans le dossier:")
     for file in files:
         tmp = process(os.path.join(path, file))
-        print(f"Fichier \"{file}\"\t: \tSRI ({tmp['SRI']} %)")
+        print(f"  Fichier \"{file}\"\t: \tSRI ({tmp['SRI']} %)")
 
 ##################################################
 if __name__ == "__main__":
