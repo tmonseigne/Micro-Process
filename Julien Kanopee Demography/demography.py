@@ -13,13 +13,35 @@ limit_age = [10, 90]
 n_studies = 4
 n_csp = 9
 
-stats_columns = ["N", "Age", "Sex 1", "Sex 2"]
+stats_columns = ["N", "Age mean", "Age std", "Sex 1", "Sex 2"]
 stats_columns += [f"Studies {i}" for i in range(n_studies)]
 stats_columns += [f"CSP {i}" for i in range(n_csp)]
 departments = list(range(1, 96)) + [971, 972, 973, 974, 976]
 
 ##################################################
+def get_lasts_periods(dataframe):
+    """
+    Séparation du dataframe en sous dataframe par période.
+    :param dataframe: Dataframe de sommeil
+    :return: Un dictionnaire avec des dataframes par periode (total, dernière année, dernier mois, dernière semaine)
+    """
+    today = datetime.today()
+    year_dataframe = dataframe[dataframe['Date'] >= today - pd.DateOffset(years=1)]
+    month_dataframe = dataframe[dataframe['Date'] >= today - pd.DateOffset(months=1)]
+    week_dataframe = dataframe[dataframe['Date'] >= today - pd.DateOffset(days=7)]
+    return {"Total":      dataframe,
+            "Last Year":  year_dataframe,
+            "Last Month": month_dataframe,
+            "last Week":  week_dataframe}
+
+##################################################
 def create_evolutions(dataframe, axes, month=True):
+    """
+    Créé les courbes d'évolutions
+    :param dataframe: Dataframe de stats
+    :param axes: Axes à remplir
+    :param month: Paramètre permettant de définir si on est sur un dataframe mois par mois ou semaine par semaine
+    """
     if month: dataframe["Date"] = dataframe["Month"].astype(str) + '/' + dataframe["Year"].astype(str)
     for i in range(len(axes)):
         axes[i].clear()
@@ -30,12 +52,12 @@ def create_evolutions(dataframe, axes, month=True):
     axes[0].set_ylabel("Number of participants")
 
     # Age
-    axes[1].plot(dataframe["Date"], dataframe["Age"])
-    axes[1].set_ylabel("Age")
+    axes[1].plot(dataframe["Date"], dataframe["Age mean"])
+    axes[1].set_ylabel("Age mean")
 
     # Sex repartition
-    axes[2].plot(dataframe["Date"], dataframe[stats_columns[2]], label=stats_columns[2])
     axes[2].plot(dataframe["Date"], dataframe[stats_columns[3]], label=stats_columns[3])
+    axes[2].plot(dataframe["Date"], dataframe[stats_columns[4]], label=stats_columns[4])
     axes[2].set_ylabel("Sex repartition")
     axes[2].legend(loc='upper right')
 
@@ -52,6 +74,11 @@ def create_evolutions(dataframe, axes, month=True):
 
 ##################################################
 def get_months_stats(dataframe):
+    """
+    Récupère les stats du Dataframe mois par mois.
+    :param dataframe: Dataframe de sommeil
+    :return: Dataframe avec les stats
+    """
     res = []
     res_dep = []
     for year, year_group in dataframe.groupby(dataframe["Date"].dt.year):
@@ -65,6 +92,11 @@ def get_months_stats(dataframe):
 
 ##################################################
 def get_weeks_stats(dataframe):
+    """
+    Récupère les stats du Dataframe semaine par semaine.
+    :param dataframe: Dataframe de sommeil
+    :return: Dataframe avec les stats
+    """
     res = []
     res_dep = []
 
@@ -90,36 +122,61 @@ def get_weeks_stats(dataframe):
 
 ##################################################
 def get_departments_row(dataframe):
+    """
+    Récupère les stats departement par département.
+    :param dataframe: Dataframe de sommeil
+    :return: Dataframe avec le nombre de nouveau venu par département
+    """
     res = np.zeros(len(departments)).astype(int).tolist()
     for i in range(len(departments)):
         res[i] = (dataframe["Departement"] == departments[i]).sum()
     return res
 
 ##################################################
-def get_departments(dataframe, month_dataframe, week_dataframe):
-    res = [["Total", len(dataframe)] + get_departments_row(dataframe),
-           ["Last Month", len(month_dataframe)] + get_departments_row(month_dataframe),
-           ["Last Week", len(week_dataframe)] + get_departments_row(week_dataframe)]
+def get_departments(dataframes):
+    """
+    Récupère les stats departement par département en séparant par total, dernière année, dernier mois, dernière semaine.
+    :param dataframes: Dataframes de sommeil (dictionnaire de partie de dataframe)
+    :return: Dataframe avec le nombre de nouveau venu par département et par période
+    """
+    res = []
+    for key, value in dataframes.items():
+        res.append([key, len(value)] + get_departments_row(value))
     return pd.DataFrame(data=res, columns=["Period", "N"] + departments)
 
 ##################################################
 def get_dataframe_stats(dataframe):
-    if len(dataframe) == 0: return np.zeros(4 + n_studies + n_csp).astype(int).tolist()
+    """
+    Récupère les stats du Dataframe.
+    :param dataframe: Dataframe de sommeil
+    :return: Dataframe avec les stats
+    """
+    if len(dataframe) == 0: return np.zeros(len(stats_columns)).astype(int).tolist()
+
+    ratio = 100.0 / len(dataframe)
 
     res = [len(dataframe),
            np.nanmean(dataframe.loc[(limit_age[0] <= dataframe["Age"]) & (dataframe["Age"] <= limit_age[1]), "Age"]).round(2),
-           (dataframe["Sex"] == 1).sum(), (dataframe["Sex"] == 2).sum()]
-    for i in range(n_studies): res.append((dataframe["Studies"] == i).sum())
-    for i in range(n_csp):     res.append((dataframe["Csp"] == i).sum())
+           np.nanstd(dataframe.loc[(limit_age[0] <= dataframe["Age"]) & (dataframe["Age"] <= limit_age[1]), "Age"]).round(2),
+           np.round(ratio * (dataframe["Sex"] == 1).sum(), 2),
+           np.round(ratio * (dataframe["Sex"] == 2).sum(), 2)]
+    for i in range(n_studies): res.append(np.round(ratio * (dataframe["Studies"] == i).sum(), 2))
+    for i in range(n_csp):     res.append(np.round(ratio * (dataframe["Csp"] == i).sum(), 2))
 
     return res
 
 ##################################################
-def get_stats(dataframe, month_dataframe, week_dataframe):
-    res = [["Total"] + get_dataframe_stats(dataframe),
-           ["Last Month"] + get_dataframe_stats(month_dataframe),
-           ["Last Week"] + get_dataframe_stats(week_dataframe)]
-    return pd.DataFrame(data=res, columns=["Period"] + stats_columns), get_departments(dataframe, month_dataframe, week_dataframe)
+def get_stats(dataframe):
+    """
+    Récupère les stats du Dataframe en séparant par total, dernière année, dernier mois, dernière semaine.
+    :param dataframe: Dataframe de sommeil
+    :return: Dataframe avec les stats
+    """
+    res = []
+    dataframes = get_lasts_periods(dataframe)
+    for key, value in dataframes.items():
+        res.append([key] + get_dataframe_stats(value))
+    return pd.DataFrame(data=res, columns=["Period"] + stats_columns), get_departments(dataframes)
 
 ##################################################
 def main():
@@ -137,15 +194,9 @@ def main():
     dataframe["Departement"] = (dataframe["Postal"] / 1000)
     dataframe["Departement"].fillna(-1, inplace=True)
     dataframe["Departement"] = dataframe["Departement"].astype(int)
-    # Séparation en 3 groupes (original, dernier mois, derniere semaine)
-    today = datetime.today()
-    last_month = today - pd.DateOffset(months=1)
-    last_week = today - pd.DateOffset(days=7)
-    month_dataframe = dataframe[dataframe['Date'] >= last_month]
-    week_dataframe = dataframe[dataframe['Date'] >= last_week]
 
     # Récupération des stats totales
-    stats_df, departments_df = get_stats(dataframe, month_dataframe, week_dataframe)
+    stats_df, departments_df = get_stats(dataframe)
     stats_df.to_csv(os.path.join(output_path, "total stats.csv"), index=False)
     departments_df.to_csv(os.path.join(output_path, "total departments.csv"), index=False)
 
